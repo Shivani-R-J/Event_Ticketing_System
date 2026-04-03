@@ -25,7 +25,10 @@ let salesChart      = null;
 const ICONS = { Music:'music', Sports:'dribbble', Tech:'laptop', Art:'palette', Food:'coffee', Film:'film', Comedy:'smile', Other:'sparkles', All:'grid-2x2' };
 const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
 
-let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
+let purchases = JSON.parse(localStorage.getItem('chainpass_purchases')) || [];
+let eventRatings = JSON.parse(localStorage.getItem('chainpass_event_ratings')) || {};
+
+let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [ 
   {
     id:'demo-1', name:'Neon Rave Night', category:'Music',
     date:'2026-04-15', time:'22:00', venue:'Warehouse 23, Berlin', price:'0.01',
@@ -152,7 +155,84 @@ function saveEvents() {
   localStorage.setItem('chainpass_events_v2', JSON.stringify(events));
 }
 
+function savePurchases() {
+  localStorage.setItem('chainpass_purchases', JSON.stringify(purchases));
+}
+
+function saveRatings() {
+  localStorage.setItem('chainpass_event_ratings', JSON.stringify(eventRatings));
+}
+
+function loadAnalytics() {
+  purchases = JSON.parse(localStorage.getItem('chainpass_purchases')) || [];
+  eventRatings = JSON.parse(localStorage.getItem('chainpass_event_ratings')) || {};
+}
+
+function getTotalRevenue() {
+  return purchases.reduce((sum, purchase) => sum + (parseFloat(purchase.price) || 0), 0);
+}
+
+function getUniqueUsers() {
+  return new Set(purchases.map(p => (p.owner || '').toLowerCase())).size;
+}
+
+function getEventRatingDetails(eventId) {
+  const rating = eventRatings[eventId] || { sum: 0, count: 0, userRatings: {} };
+  const count = rating.count || Object.keys(rating.userRatings || {}).length;
+  const avg = count ? +(rating.sum / count).toFixed(1) : 0;
+  return { avg, count };
+}
+
+function getSalesForEvent(eventId) {
+  return purchases.filter(p => p.eventId === eventId).length;
+}
+
+function getTopEvents() {
+  return events
+    .map(evt => {
+      const sales = getSalesForEvent(evt.id);
+      const revenue = +(sales * parseFloat(evt.price || 0)).toFixed(4);
+      const rating = getEventRatingDetails(evt.id);
+      return { ...evt, sales, revenue, rating };
+    })
+    .sort((a, b) => b.sales - a.sales || b.rating.avg - a.rating.avg)
+    .slice(0, 3);
+}
+
+function rateEvent(eventId) {
+  const evt = events.find(e => e.id === eventId);
+  if (!evt) return;
+  const score = parseInt(prompt(`Rate ${evt.name} from 1 to 5 stars:`), 10);
+  if (!score || score < 1 || score > 5) {
+    toast('Rating Cancelled', 'Please enter a value between 1 and 5.', 'info');
+    return;
+  }
+  const owner = (userAddress || 'guest').toLowerCase();
+  if (!eventRatings[eventId]) {
+    eventRatings[eventId] = { sum: 0, count: 0, userRatings: {} };
+  }
+  const eventRating = eventRatings[eventId];
+  if (!eventRating.userRatings) {
+    eventRating.userRatings = {};
+  }
+  const existing = eventRating.userRatings[owner];
+  if (existing) {
+    eventRating.sum -= existing;
+    eventRating.sum += score;
+  } else {
+    eventRating.count = (eventRating.count || 0) + 1;
+    eventRating.sum += score;
+  }
+  eventRating.userRatings[owner] = score;
+  saveRatings();
+  toast('Thank you!', `You rated ${evt.name} ${score} stars.`, 'success');
+  renderUserEvents();
+  renderOrgEvents();
+  updateChart();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  loadAnalytics();
   if (typeof lucide !== 'undefined') lucide.createIcons();
 });
 
@@ -287,6 +367,8 @@ function renderOrgEvents(chainCount) {
   
   grid.innerHTML = events.map(evt => {
     const iconName = ICONS[evt.category] || 'sparkles';
+    const rating = getEventRatingDetails(evt.id);
+    const avgRating = rating.count ? `${rating.avg} ★ (${rating.count})` : 'No ratings yet';
     const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
     const img = `<img class="event-img" src="${imgSrc}" alt="${evt.name}" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`; 
     const sold = chainCount !== undefined ? chainCount : '—';
@@ -297,6 +379,7 @@ function renderOrgEvents(chainCount) {
         <div class="event-category"><i data-lucide="${iconName}" style="width:10px;height:10px"></i>${evt.category}</div>
         <div class="event-name">${evt.name}</div>
         <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''}<br>📍 ${evt.venue}<br>◆ ${evt.price} ETH</div>
+        <div class="event-rating">${avgRating}</div>
         <div class="ticket-bar"><div class="ticket-fill" style="width:${pct}%"></div></div>
         <div class="ticket-info"><span>On-chain: ${sold}</span><span>Total: ${total}</span></div>
       </div></div>`;
@@ -305,17 +388,56 @@ function renderOrgEvents(chainCount) {
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+function getAverageRatingAllEvents() {
+  let total = 0;
+  let count = 0;
+  for (const evtId in eventRatings) {
+    if (!eventRatings[evtId]) continue;
+    const item = eventRatings[evtId];
+    const evtCount = item.count || Object.keys(item.userRatings || {}).length;
+    if (evtCount > 0) {
+      total += (item.sum || 0);
+      count += evtCount;
+    }
+  }
+  return count ? +(total / count).toFixed(1) : 0;
+}
+
+function renderTopEvents() {
+  const container = document.getElementById('topEventsList');
+  if (!container) return;
+  const top = getTopEvents();
+  if (!top.length) {
+    container.innerHTML = '<div class="empty-state"><p>No ticket sales yet.</p></div>';
+    return;
+  }
+  container.innerHTML = top.map(evt => `
+    <div class="top-event-card">
+      <h4>${evt.name}</h4>
+      <p>Category: ${evt.category} · ${evt.sales} tickets sold</p>
+      <p>Revenue: ${evt.revenue.toFixed(4)} ETH</p>
+      <p>Rating: ${evt.rating.count ? `${evt.rating.avg} ★ (${evt.rating.count})` : 'No ratings'}</p>
+    </div>
+  `).join('');
+}
+
 function updateChart() {
   const ctx = document.getElementById('salesChart');
   if(!ctx) return;
-  
-  const labels = events.map(e => e.name);
-  const data = events.map(e => {
-    // Mock analytics logic because our legacy contract doesn't tie tickets to specific events.
-    // We use a deterministic pseudo-random number based on the event name length to keep it consistent
-    let pseudo = (e.name.length * 7) % 100 / 100; // 0 to 0.99
-    return Math.floor((e.totalTickets || 100) * (pseudo * 0.5 + 0.1)); 
-  });
+
+  loadAnalytics();
+
+  document.getElementById('totalRevenue').textContent = getTotalRevenue().toFixed(4) + ' ETH';
+  document.getElementById('uniqueUsers').textContent = getUniqueUsers();
+  const top = getTopEvents();
+  document.getElementById('topEvent').textContent = top.length ? `${top[0].name} (${top[0].sales} sold)` : '—';
+  const avgRating = getAverageRatingAllEvents();
+  document.getElementById('averageRating').textContent = avgRating ? `${avgRating} ★` : 'No ratings yet';
+
+  renderTopEvents();
+
+  const labels = top.length ? top.map(e => e.name) : events.slice(0, 5).map(e => e.name);
+  const data = top.length ? top.map(e => e.sales) : events.slice(0, 5).map(e => getSalesForEvent(e.id));
 
   if(salesChart) {
     salesChart.data.labels = labels;
@@ -327,7 +449,7 @@ function updateChart() {
       data: {
         labels: labels,
         datasets: [{
-          label: 'Est. Tickets Sold',
+          label: 'Tickets Sold',
           data: data,
           backgroundColor: 'rgba(212, 168, 67, 0.6)',
           borderColor: 'rgba(212, 168, 67, 1)',
@@ -378,6 +500,7 @@ function renderUserEvents() {
   grid.innerHTML = filtered.map(evt => {
     const owned = myOnChainTickets.some(t=>t.eventId===evt.id);
     const iconName = ICONS[evt.category] || 'sparkles';
+    const rating = getEventRatingDetails(evt.id);
     const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
     const img = `<img class="user-event-img" src="${imgSrc}" alt="${evt.name}" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`; 
     return `<div class="user-event-card">
@@ -388,8 +511,12 @@ function renderUserEvents() {
         <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:.03em;margin-bottom:5px">${evt.name}</div>
         <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} &nbsp;·&nbsp; 📍 ${evt.venue}</div>
         <div style="font-size:13px;color:var(--text-dim);margin:8px 0 10px;line-height:1.6">${evt.desc||''}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px">Rating: ${rating.count ? `${rating.avg} ★ (${rating.count})` : 'No ratings yet'}</div>
         <button class="btn-book" ${owned?'disabled':''} onclick="openBooking('${evt.id}')">
           ${owned ? '<i data-lucide="check-circle" style="width:16px;height:16px"></i> Ticket Owned' : '<i data-lucide="link-2" style="width:16px;height:16px"></i> Buy via MetaMask'}
+        </button>
+        <button class="btn-book" style="margin-top:8px;background:rgba(46,207,179,.15);border-color:rgba(46,207,179,.4);color:var(--teal);" onclick="rateEvent('${evt.id}')">
+          <i data-lucide="star" style="width:16px;height:16px"></i> Rate Event
         </button>
       </div></div>`;
   }).join('');
@@ -462,8 +589,19 @@ async function confirmBooking(eventId) {
       })
     };
 
+    purchases.push({
+      ticketId,
+      eventId: evt.id,
+      eventName: evt.name,
+      owner: onChain.owner,
+      price: evt.price,
+      timestamp: Date.now()
+    });
+    savePurchases();
+
     myOnChainTickets.push(ticketObj);
     renderUserEvents(); renderMyTickets();
+    updateChart();
     closeModal();
     setTimeout(() => showTicketModal(ticketObj), 200);
     toast('Ticket Minted! 🎉', `On-chain #${ticketId} · Block ${receipt.blockNumber}`, 'success');

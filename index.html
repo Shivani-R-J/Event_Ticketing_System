@@ -99,8 +99,33 @@
       <div class="section-header">
         <div class="section-title">Dashboard Analytics</div>
       </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value" id="totalRevenue">0 ETH</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Unique Users</div>
+          <div class="stat-value" id="uniqueUsers">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Top Event</div>
+          <div class="stat-value" id="topEvent">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Rating</div>
+          <div class="stat-value" id="averageRating">—</div>
+        </div>
+      </div>
       <div class="chart-container">
         <canvas id="salesChart"></canvas>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Top Events</div>
+      </div>
+      <div class="top-events-grid" id="topEventsList">
+        <div class="empty-state"><p>No ticket data yet.</p></div>
       </div>
 
       <div class="section-header">
