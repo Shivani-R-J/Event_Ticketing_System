@@ -63,7 +63,7 @@ let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
     id:'demo-6', name:'Laugh Out Loud Comedy Club', category:'Comedy',
     date:'2026-04-25', time:'21:30', venue:'The Comedy Cellar, NY', price:'0.015',
     totalTickets:150, desc:'A night of hilarious stand-up featuring surprise celebrity guests.',
-    image:'https://images.unsplash.com/photo-1455938238901-87ca138d0bb0?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1515165562835-cb09e773b1bb?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-7', name:'Cinematic Masterpieces Festival', category:'Film',
@@ -129,7 +129,7 @@ let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
     id:'demo-17', name:'Stand-Up Comedy Night Bash', category:'Comedy',
     date:'2026-05-12', time:'20:00', venue:'Beacon Theater, New York', price:'0.035',
     totalTickets:2500, desc:'Four hours of non-stop laughter with the hottest comedians in the industry.',
-    image:'https://images.unsplash.com/photo-1515165562835-cb09e773b1bb?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-18', name:'Startup Tech Summit 2026', category:'Tech',
