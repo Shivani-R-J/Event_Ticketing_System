@@ -199,14 +199,33 @@ function getTopEvents() {
     .slice(0, 3);
 }
 
-function rateEvent(eventId) {
+function buildStarRating(eventId) {
+  const { avg, count } = getEventRatingDetails(eventId);
+  const owner = (userAddress || 'guest').toLowerCase();
+  const userRating = eventRatings[eventId]?.userRatings?.[owner] || 0;
+
+  let html = '<div class="star-widget" data-event="' + eventId + '">';
+  for (let i = 1; i <= 5; i++) {
+    const activeClass = i <= userRating ? 'filled' : (i <= Math.round(avg) ? 'hovered' : '');
+    html += `<span class="star ${activeClass}" onclick="rateEvent('${eventId}', ${i})" title="Rate ${i} stars">★</span>`;
+  }
+  html += `<span class="rating-summary">${count ? `${avg} ★ (${count})` : 'No ratings yet'}</span>`;
+  html += '</div>';
+  return html;
+}
+
+function rateEvent(eventId, score) {
   const evt = events.find(e => e.id === eventId);
   if (!evt) return;
-  const score = parseInt(prompt(`Rate ${evt.name} from 1 to 5 stars:`), 10);
+
+  if (!score || score < 1 || score > 5) {
+    score = parseInt(prompt(`Rate ${evt.name} from 1 to 5 stars:`), 10);
+  }
   if (!score || score < 1 || score > 5) {
     toast('Rating Cancelled', 'Please enter a value between 1 and 5.', 'info');
     return;
   }
+
   const owner = (userAddress || 'guest').toLowerCase();
   if (!eventRatings[eventId]) {
     eventRatings[eventId] = { sum: 0, count: 0, userRatings: {} };
@@ -215,6 +234,7 @@ function rateEvent(eventId) {
   if (!eventRating.userRatings) {
     eventRating.userRatings = {};
   }
+
   const existing = eventRating.userRatings[owner];
   if (existing) {
     eventRating.sum -= existing;
@@ -225,6 +245,7 @@ function rateEvent(eventId) {
   }
   eventRating.userRatings[owner] = score;
   saveRatings();
+
   toast('Thank you!', `You rated ${evt.name} ${score} stars.`, 'success');
   renderUserEvents();
   renderOrgEvents();
@@ -500,7 +521,6 @@ function renderUserEvents() {
   grid.innerHTML = filtered.map(evt => {
     const owned = myOnChainTickets.some(t=>t.eventId===evt.id);
     const iconName = ICONS[evt.category] || 'sparkles';
-    const rating = getEventRatingDetails(evt.id);
     const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
     const img = `<img class="user-event-img" src="${imgSrc}" alt="${evt.name}" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`; 
     return `<div class="user-event-card">
@@ -511,12 +531,9 @@ function renderUserEvents() {
         <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:.03em;margin-bottom:5px">${evt.name}</div>
         <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} &nbsp;·&nbsp; 📍 ${evt.venue}</div>
         <div style="font-size:13px;color:var(--text-dim);margin:8px 0 10px;line-height:1.6">${evt.desc||''}</div>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px">Rating: ${rating.count ? `${rating.avg} ★ (${rating.count})` : 'No ratings yet'}</div>
+        ${buildStarRating(evt.id)}
         <button class="btn-book" ${owned?'disabled':''} onclick="openBooking('${evt.id}')">
           ${owned ? '<i data-lucide="check-circle" style="width:16px;height:16px"></i> Ticket Owned' : '<i data-lucide="link-2" style="width:16px;height:16px"></i> Buy via MetaMask'}
-        </button>
-        <button class="btn-book" style="margin-top:8px;background:rgba(46,207,179,.15);border-color:rgba(46,207,179,.4);color:var(--teal);" onclick="rateEvent('${evt.id}')">
-          <i data-lucide="star" style="width:16px;height:16px"></i> Rate Event
         </button>
       </div></div>`;
   }).join('');
