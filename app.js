@@ -872,14 +872,18 @@ async function onScanSuccess(decodedText, decodedResult) {
 
   try {
     let data;
+    const raw = decodedText.trim();
     try {
-      data = JSON.parse(decodedText);
+      data = JSON.parse(raw);
     } catch (jsonErr) {
-      data = { ticketId: decodedText.trim() };
+      try {
+        data = JSON.parse(decodeURIComponent(raw));
+      } catch (uriErr) {
+        data = { ticketId: raw };
+      }
     }
-    const tId = data.ticketId;
-    if (!tId) throw new Error("Invalid QR data");
-    
+
+    const tId = data.ticketId || data.id || data.ticket || null;
     // Read from contract
     const t = await contract.tickets(tId);
     
