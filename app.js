@@ -60,6 +60,90 @@ let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
     date:'2026-04-25', time:'21:30', venue:'The Comedy Cellar, NY', price:'0.015',
     totalTickets:150, desc:'A night of hilarious stand-up featuring surprise celebrity guests.',
     image:'https://images.unsplash.com/photo-1527224857830-43a7aa8597c2?w=600&q=80'
+  },
+  {
+    id:'demo-7', name:'Cinematic Masterpieces Festival', category:'Film',
+    date:'2026-05-15', time:'19:00', venue:'Cannes Film Festival, France', price:'0.08',
+    totalTickets:2000, desc:'Experience award-winning films from international directors on the big screen.',
+    image:'https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=600&q=80'
+  },
+  {
+    id:'demo-8', name:'Electronic Beats Festival', category:'Music',
+    date:'2026-06-22', time:'20:00', venue:'Tomorrowland, Belgium', price:'0.12',
+    totalTickets:150000, desc:'Three days of non-stop electronic music with world-famous DJs and immersive production.',
+    image:'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80'
+  },
+  {
+    id:'demo-9', name:'Ultimate Tennis Championship', category:'Sports',
+    date:'2026-07-10', time:'14:00', venue:'Wimbledon, London', price:'0.25',
+    totalTickets:15000, desc:'Watch the finest tennis players compete for glory at the prestigious Wimbledon tournament.',
+    image:'https://images.unsplash.com/photo-1554224311-beee415c15b7?w=600&q=80'
+  },
+  {
+    id:'demo-10', name:'Innovation & Gaming Expo', category:'Tech',
+    date:'2026-06-05', time:'10:00', venue:'Las Vegas Convention Center, USA', price:'0.06',
+    totalTickets:5000, desc:'Latest gaming hardware, VR experiences, and cutting-edge technology demonstrations.',
+    image:'https://images.unsplash.com/photo-1538481143235-5d630ada3605?w=600&q=80'
+  },
+  {
+    id:'demo-11', name:'Yoga & Wellness Retreat', category:'Other',
+    date:'2026-05-28', time:'08:00', venue:'Bali Resort & Spa, Indonesia', price:'0.18',
+    totalTickets:500, desc:'Five-day meditation and yoga retreat with world-renowned instructors in paradise.',
+    image:'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&q=80'
+  },
+  {
+    id:'demo-12', name:'Spring Jazz Festival', category:'Music',
+    date:'2026-04-30', time:'18:00', venue:'Montreux Jazz Club, Switzerland', price:'0.045',
+    totalTickets:3000, desc:'Legendary jazz performers and contemporary artists in the most scenic festival setting.',
+    image:'https://images.unsplash.com/photo-1511379938547-c1f69b13d835?w=600&q=80'
+  },
+  {
+    id:'demo-13', name:'Contemporary Art Gala', category:'Art',
+    date:'2026-05-18', time:'19:30', venue:'Museum of Modern Art, New York', price:'0.12',
+    totalTickets:800, desc:'Exclusive evening celebrating emerging and established contemporary artists with live performances.',
+    image:'https://images.unsplash.com/photo-1561214115-6d2f1b0609fa?w=600&q=80'
+  },
+  {
+    id:'demo-14', name:'International Film Awards', category:'Film',
+    date:'2026-07-01', time:'20:00', venue:'Dolby Theatre, Los Angeles', price:'0.35',
+    totalTickets:3500, desc:'Celebrate cinema excellence at the most prestigious film awards ceremony of the year.',
+    image:'https://images.unsplash.com/photo-1489749798305-4fea3ba63d60?w=600&q=80'
+  },
+  {
+    id:'demo-15', name:'Basketball Super League Finals', category:'Sports',
+    date:'2026-06-15', time:'19:30', venue:'Chase Center, San Francisco', price:'0.20',
+    totalTickets:20000, desc:'High-octane basketball action as elite teams battle for the championship title.',
+    image:'https://images.unsplash.com/photo-1546519638-68711109e0e6?w=600&q=80'
+  },
+  {
+    id:'demo-16', name:'Asian Fusion Culinary Fest', category:'Food',
+    date:'2026-05-05', time:'12:00', venue:'Marina Bay, Singapore', price:'0.025',
+    totalTickets:8000, desc:'Asia\'s finest chefs showcase traditional and modern fusion cuisine with cooking demonstrations.',
+    image:'https://images.unsplash.com/photo-1504674900927-97f1372e8829?w=600&q=80'
+  },
+  {
+    id:'demo-17', name:'Stand-Up Comedy Night Bash', category:'Comedy',
+    date:'2026-05-12', time:'20:00', venue:'Beacon Theater, New York', price:'0.035',
+    totalTickets:2500, desc:'Four hours of non-stop laughter with the hottest comedians in the industry.',
+    image:'https://images.unsplash.com/photo-1501281668745-f7395b0ee29f?w=600&q=80'
+  },
+  {
+    id:'demo-18', name:'Startup Tech Summit 2026', category:'Tech',
+    date:'2026-07-25', time:'09:00', venue:'Singapore Expo, Singapore', price:'0.055',
+    totalTickets:4000, desc:'Network with founders, VCs, and innovators building the future of technology.',
+    image:'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80'
+  },
+  {
+    id:'demo-19', name:'Rock & Metal Extravaganza', category:'Music',
+    date:'2026-06-30', time:'18:00', venue:'Sonisphere Festival Grounds, Greece', price:'0.065',
+    totalTickets:25000, desc:'Three days of electrifying rock and metal performances from legendary and emerging bands.',
+    image:'https://images.unsplash.com/photo-1478225143522-56fac1ea2c97?w=600&q=80'
+  },
+  {
+    id:'demo-20', name:'Marathon Trophy Grand Prix', category:'Sports',
+    date:'2026-08-20', time:'06:00', venue:'Circuit des 24 Heures, France', price:'0.28',
+    totalTickets:30000, desc:'Witness the ultimate endurance test: 24-hour racing with world\'s top drivers.',
+    image:'https://images.unsplash.com/photo-1556821773-b6b3c1c741c1?w=600&q=80'
   }
 ];
 
