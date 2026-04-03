@@ -199,17 +199,24 @@ function getTopEvents() {
     .slice(0, 3);
 }
 
+function userOwnsEvent(eventId) {
+  return myOnChainTickets.some(t => t.eventId === eventId);
+}
+
 function buildStarRating(eventId) {
   const { avg, count } = getEventRatingDetails(eventId);
   const owner = (userAddress || 'guest').toLowerCase();
   const userRating = eventRatings[eventId]?.userRatings?.[owner] || 0;
+  const canRate = userOwnsEvent(eventId);
 
   let html = '<div class="star-widget" data-event="' + eventId + '">';
   for (let i = 1; i <= 5; i++) {
     const activeClass = i <= userRating ? 'filled' : (i <= Math.round(avg) ? 'hovered' : '');
-    html += `<span class="star ${activeClass}" onclick="rateEvent('${eventId}', ${i})" title="Rate ${i} stars">★</span>`;
+    const starTitle = canRate ? `Rate ${i} stars` : 'Book ticket to rate';
+    const clickAttr = canRate ? `onclick="rateEvent('${eventId}', ${i})"` : '';
+    html += `<span class="star ${activeClass} ${canRate ? '' : 'disabled'}" ${clickAttr} title="${starTitle}">★</span>`;
   }
-  html += `<span class="rating-summary">${count ? `${avg} ★ (${count})` : 'No ratings yet'}</span>`;
+  html += `<span class="rating-summary">${count ? `${avg} ★ (${count})` : (canRate ? 'No ratings yet' : 'Book ticket to rate')}</span>`;
   html += '</div>';
   return html;
 }
@@ -217,6 +224,11 @@ function buildStarRating(eventId) {
 function rateEvent(eventId, score) {
   const evt = events.find(e => e.id === eventId);
   if (!evt) return;
+
+  if (!userOwnsEvent(eventId)) {
+    toast('Cannot Rate', 'You must book a ticket before rating this event.', 'error');
+    return;
+  }
 
   if (!score || score < 1 || score > 5) {
     score = parseInt(prompt(`Rate ${evt.name} from 1 to 5 stars:`), 10);
