@@ -23,6 +23,7 @@ let myOnChainTickets = [];
 let salesChart      = null;
 
 const ICONS = { Music:'music', Sports:'dribbble', Tech:'laptop', Art:'palette', Food:'coffee', Film:'film', Comedy:'smile', Other:'sparkles', All:'grid-2x2' };
+const DEFAULT_EVENT_IMAGE = 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80';
 
 let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
   {
@@ -286,9 +287,8 @@ function renderOrgEvents(chainCount) {
   
   grid.innerHTML = events.map(evt => {
     const iconName = ICONS[evt.category] || 'sparkles';
-    const img = evt.image
-      ? `<img class="event-img" src="${evt.image}" alt="${evt.name}" onerror="this.outerHTML='<div class=\\'event-img-ph\\'><i data-lucide=\\'${iconName}\\' style=\\'width:44px;height:44px;color:rgba(255,255,255,0.2)\\'></i></div>'">`
-      : `<div class="event-img-ph"><i data-lucide="${iconName}" style="width:44px;height:44px;color:rgba(255,255,255,0.2)"></i></div>`;
+    const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
+    const img = `<img class="event-img" src="${imgSrc}" alt="${evt.name}" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`; 
     const sold = chainCount !== undefined ? chainCount : '—';
     const total = evt.totalTickets || '∞';
     const pct = (evt.totalTickets && chainCount && chainCount !== '—') ? Math.min(100,Math.round(chainCount/evt.totalTickets*100)) : 0;
@@ -378,9 +378,8 @@ function renderUserEvents() {
   grid.innerHTML = filtered.map(evt => {
     const owned = myOnChainTickets.some(t=>t.eventId===evt.id);
     const iconName = ICONS[evt.category] || 'sparkles';
-    const img = evt.image
-      ? `<img class="user-event-img" src="${evt.image}" alt="${evt.name}" onerror="this.outerHTML='<div class=\\'user-event-img-ph\\'><i data-lucide=\\'${iconName}\\' style=\\'width:58px;height:58px;color:rgba(255,255,255,0.2)\\'></i></div>'">`
-      : `<div class="user-event-img-ph"><i data-lucide="${iconName}" style="width:58px;height:58px;color:rgba(255,255,255,0.2)"></i></div>`;
+    const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
+    const img = `<img class="user-event-img" src="${imgSrc}" alt="${evt.name}" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`; 
     return `<div class="user-event-card">
       <div class="price-tag">◆ ${evt.price} ETH</div>
       ${img}
@@ -404,7 +403,8 @@ function renderUserEvents() {
 function openBooking(eventId) {
   const evt = events.find(e=>e.id===eventId);
   if (!evt) return;
-  const img = evt.image ? `<img src="${evt.image}" style="width:100%;height:145px;object-fit:cover;border-radius:8px;margin-bottom:16px" onerror="this.style.display='none'">` : '';
+  const imgSrc = evt.image || DEFAULT_EVENT_IMAGE;
+  const img = `<img src="${imgSrc}" style="width:100%;height:145px;object-fit:cover;border-radius:8px;margin-bottom:16px" onerror="this.onerror=null;this.src='${DEFAULT_EVENT_IMAGE}'">`;
   document.getElementById('modalContent').innerHTML = `
     ${img}
     <div style="font-family:Space Mono,monospace;font-size:9px;letter-spacing:.3em;color:var(--gold);margin-bottom:4px">${evt.category.toUpperCase()}</div>
