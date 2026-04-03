@@ -399,7 +399,7 @@ function renderOrgEvents(chainCount) {
       <div class="event-body">
         <div class="event-category"><i data-lucide="${iconName}" style="width:10px;height:10px"></i>${evt.category}</div>
         <div class="event-name">${evt.name}</div>
-        <div class="event-meta"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} <br><i data-lucide="map-pin" style="width:12px;height:12px"></i> ${evt.venue} <br><i data-lucide="credit-card" style="width:12px;height:12px"></i> ${evt.price} ETH</div>
+        <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''}<br>📍 ${evt.venue}<br>◆ ${evt.price} ETH</div>
         <div class="event-rating">${avgRating}</div>
         <div class="ticket-bar"><div class="ticket-fill" style="width:${pct}%"></div></div>
         <div class="ticket-info"><span>On-chain: ${sold}</span><span>Total: ${total}</span></div>
@@ -529,7 +529,7 @@ function renderUserEvents() {
       <div class="user-event-body">
         <div class="event-category"><i data-lucide="${iconName}" style="width:10px;height:10px"></i>${evt.category}</div>
         <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:.03em;margin-bottom:5px">${evt.name}</div>
-        <div class="event-meta"><i data-lucide="calendar" style="width:12px;height:12px"></i> ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} &nbsp;·&nbsp; <i data-lucide="map-pin" style="width:12px;height:12px"></i> ${evt.venue}</div>
+        <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} &nbsp;·&nbsp; 📍 ${evt.venue}</div>
         <div style="font-size:13px;color:var(--text-dim);margin:8px 0 10px;line-height:1.6">${evt.desc||''}</div>
         ${buildStarRating(evt.id)}
         <button class="btn-book" ${owned?'disabled':''} onclick="openBooking('${evt.id}')">
