@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChainPass — Blockchain Ticketing</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- QR Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<!-- HTML2Canvas for ticket downloading -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="loginPage" class="page active">
+  <div style="text-align:center;position:relative;z-index:10">
+    <div class="login-logo">ChainPass</div>
+    <div class="login-tagline">Sepolia Blockchain · Event Ticketing</div>
+    <div class="login-cards">
+      <div class="login-card" onclick="loginAs('organizer')">
+        <i data-lucide="tent" class="login-card-icon" style="width: 48px; height: 48px;"></i>
+        <h2>Event Organizer</h2>
+        <p>Create events, monitor sales securely, and scan verified tickets.</p>
+      </div>
+      <div class="login-card" onclick="loginAs('user')">
+        <i data-lucide="ticket" class="login-card-icon" style="width: 48px; height: 48px;"></i>
+        <h2>Event Goer</h2>
+        <p>Browse events, buy tickets via MetaMask, and get an on-chain QR pass.</p>
+      </div>
+    </div>
+    <p style="margin-top:28px;font-family:Space Mono,monospace;font-size:10px;color:var(--text-dim)">
+      Legacy Contract &nbsp;<span style="color:var(--teal)">0x8d059EEb57E0Eeb9098c8f503CA708593Aa80B1E</span>&nbsp; · Sepolia
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════ ORGANIZER ══════════════ -->
+<div id="organizerPage" class="page">
+  <nav class="topnav">
+    <div class="nav-logo">ChainPass</div>
+    <div class="nav-role">Organizer</div>
+    <div class="nav-right">
+      <span id="orgNetBadge" class="net-badge" style="display:none"></span>
+      <div class="wallet-pill" onclick="connectWallet('org')" id="orgWalletPill">
+        <div class="wallet-dot" id="orgWalletDot"></div>
+        <span class="wallet-text" id="orgWalletText">Connect Wallet</span>
+      </div>
+      <button class="btn-back" onclick="goBack()"><i data-lucide="arrow-left" style="width:12px; height:12px;"></i> Exit</button>
+    </div>
+  </nav>
+
+  <div class="org-layout">
+    <aside class="org-sidebar">
+      <h2><i data-lucide="calendar-plus" style="width:22px;height:22px"></i> New Event</h2>
+      <div class="form-group"><label class="form-label">Event Name *</label><input class="form-input" id="evtName" placeholder="e.g. Neon Rave Night"/></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" id="evtCategory">
+          <option value="Music">Music</option><option value="Sports">Sports</option>
+          <option value="Tech">Tech</option><option value="Art">Art</option>
+          <option value="Food">Food</option><option value="Film">Film</option>
+          <option value="Comedy">Comedy</option><option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="evtDate" type="date"/></div>
+      <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="evtTime" type="time"/></div>
+      <div class="form-group"><label class="form-label">Venue *</label><input class="form-input" id="evtVenue" placeholder="e.g. Madison Square Garden"/></div>
+      <div class="form-group"><label class="form-label">Ticket Price (ETH)</label><input class="form-input" id="evtPrice" type="number" step="0.001" min="0" placeholder="0.05"/></div>
+      <div class="form-group"><label class="form-label">Total Tickets</label><input class="form-input" id="evtTickets" type="number" min="1" placeholder="500"/></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="evtDesc" placeholder="What makes this event special?"></textarea></div>
+      <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="evtImage" type="url" placeholder="https://..."/></div>
+      <button class="btn-primary" onclick="addEvent()"><i data-lucide="plus-circle" style="width:18px;height:18px"></i> Publish Event</button>
+
+      <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 20px;">
+        <button class="btn-primary" style="margin-bottom: 20px; font-size: 20px; background: linear-gradient(135deg, var(--gold), var(--teal)); color: var(--black); border: none;" onclick="openScanner()">
+          <i data-lucide="scan-line" style="width:20px;height:20px;vertical-align:middle;margin-right:6px"></i> Scan Tickets
+        </button>
+
+        <div class="chain-info">
+          <div>Legacy Contract</div><div class="addr">0x8d059EEb57E0Eeb9098c8f503CA708593Aa80B1E</div>
+          <div style="margin-top:6px">Network: <span class="hl">Sepolia Testnet</span></div>
+          <div>Tickets on-chain: <span class="hl" id="orgChainCount">—</span></div>
+        </div>
+        <button class="btn-primary" style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:DM Sans,sans-serif;font-size:13px;letter-spacing:0;margin-top:8px" onclick="refreshOrgChain()"><i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Refresh Chain Data</button>
+      </div>
+    </aside>
+
+    <main class="org-main">
+      <div class="section-header">
+        <div class="section-title">Dashboard Analytics</div>
+      </div>
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Your Events</div>
+        <div class="section-count" id="orgEventCount">0 events</div>
+      </div>
+      <div class="events-grid" id="orgEventsGrid">
+        <div class="empty-state">
+          <i data-lucide="inbox" class="es-icon" style="margin: 0 auto 14px; width:44px;height:44px;"></i>
+          <p>No events yet.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════ USER ══════════════ -->
+<div id="userPage" class="page">
+  <nav class="topnav">
+    <div class="nav-logo">ChainPass</div>
+    <div class="nav-role">Event Goer</div>
+    <div class="nav-right">
+      <span id="userNetBadge" class="net-badge" style="display:none"></span>
+      <div class="wallet-pill" onclick="connectWallet('user')" id="userWalletPill">
+        <div class="wallet-dot" id="userWalletDot"></div>
+        <span class="wallet-text" id="userWalletText">Connect Wallet</span>
+      </div>
+      <button class="btn-back" onclick="goBack()"><i data-lucide="arrow-left" style="width:12px; height:12px;"></i> Exit</button>
+    </div>
+  </nav>
+
+  <div class="user-hero">
+    <h1>Find Your Next Experience</h1>
+    <p>Tickets minted on Sepolia blockchain · Confirmed by MetaMask · Verified by QR</p>
+    
+    <div class="search-bar" style="margin-top: 30px">
+      <i data-lucide="search" style="color:var(--text-dim); width: 18px"></i>
+      <input type="text" id="searchInput" placeholder="Search events by name or location..." oninput="renderUserEvents()">
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('All',this)"><i data-lucide="grid-2x2" style="width:14px;height:14px"></i> All</button>
+    <button class="filter-btn" onclick="setFilter('Music',this)"><i data-lucide="music" style="width:14px;height:14px"></i> Music</button>
+    <button class="filter-btn" onclick="setFilter('Sports',this)"><i data-lucide="dribbble" style="width:14px;height:14px"></i> Sports</button>
+    <button class="filter-btn" onclick="setFilter('Tech',this)"><i data-lucide="laptop" style="width:14px;height:14px"></i> Tech</button>
+    <button class="filter-btn" onclick="setFilter('Art',this)"><i data-lucide="palette" style="width:14px;height:14px"></i> Art</button>
+    <button class="filter-btn" onclick="setFilter('Food',this)"><i data-lucide="coffee" style="width:14px;height:14px"></i> Food</button>
+    <button class="filter-btn" onclick="setFilter('Film',this)"><i data-lucide="film" style="width:14px;height:14px"></i> Film</button>
+    <button class="filter-btn" onclick="setFilter('Comedy',this)"><i data-lucide="smile" style="width:14px;height:14px"></i> Comedy</button>
+  </div>
+
+  <div class="user-events-grid" id="userEventsGrid">
+    <div class="empty-state">
+      <i data-lucide="calendar-x" class="es-icon" style="margin: 0 auto 14px; width:44px; height:44px"></i>
+      <p>No events found!</p>
+    </div>
+  </div>
+
+  <div class="my-tickets-section">
+    <div class="section-header">
+      <div class="section-title">My Blockchain Tickets</div>
+      <div class="section-count" id="myTicketCount">—</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <button class="btn-back" onclick="loadMyOnChainTickets()" style="font-size:12px;padding:9px 16px"><i data-lucide="refresh-cw" style="width:12px;height:12px"></i> Sync from Blockchain</button>
+    </div>
+    <div class="tickets-list" id="myTicketsList">
+      <div class="empty-state">
+        <i data-lucide="wallet" class="es-icon" style="margin: 0 auto 14px; width: 44px; height: 44px;"></i>
+        <p>Connect wallet and sync to load your on-chain tickets.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="scannerModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeScannerModal()">×</button>
+    <div style="text-align:center;margin-bottom:16px;">
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold); display:flex; align-items:center; justify-content:center; gap:8px;">
+        <i data-lucide="scan-face" style="width:28px;height:28px;"></i> Scan Pass
+      </h2>
+      <p style="font-size:13px;color:var(--text-dim);">Hold the attendee's QR code up to the camera.</p>
+    </div>
+    <div id="reader" style="width: 100%; border-radius: 12px; overflow: hidden; background: var(--black); min-height: 250px;"></div>
+    <div id="scanResult" style="margin-top: 16px; text-align: center; display: none;"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

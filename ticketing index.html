@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChainPass — Blockchain Ticketing</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<style>
+  :root {
+    --black: #080810;
+    --white: #f0efe8;
+    --gold: #d4a843;
+    --gold-light: #f0c96a;
+    --red: #e03e3e;
+    --teal: #2ecfb3;
+    --surface: #11111e;
+    --surface2: #1a1a2e;
+    --border: rgba(212,168,67,0.2);
+    --text-dim: #888899;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; overflow-x: hidden; }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999; opacity: 0.5;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(212,168,67,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(212,168,67,0.04) 1px, transparent 1px);
+    background-size: 48px 48px; pointer-events: none;
+  }
+  .bg-glow {
+    position: fixed; width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,168,67,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none;
+  }
+
+  /* LOGIN */
+  #loginPage { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .login-logo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(48px,10vw,88px); letter-spacing: .08em; color: var(--gold); text-shadow: 0 0 80px rgba(212,168,67,.4); margin-bottom: 8px; animation: fadeUp .8s ease both; }
+  .login-tagline { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 64px; animation: fadeUp .8s .1s ease both; }
+  .login-cards { display: flex; gap: 24px; animation: fadeUp .8s .2s ease both; flex-wrap: wrap; justify-content: center; padding: 0 20px; }
+  .login-card { width: 260px; border: 1px solid var(--border); border-radius: 16px; padding: 40px 32px; background: var(--surface); cursor: pointer; transition: all .3s; text-align: center; position: relative; overflow: hidden; }
+  .login-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(212,168,67,.05) 0%,transparent 60%); opacity:0; transition:opacity .3s; }
+  .login-card:hover::before { opacity:1; }
+  .login-card:hover { border-color:var(--gold); transform:translateY(-6px); box-shadow:0 24px 60px rgba(212,168,67,.15); }
+  .login-card-icon { font-size:48px; margin-bottom:16px; display:block; }
+  .login-card h2 { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:.05em; color:var(--gold); margin-bottom:10px; }
+  .login-card p { font-size:13px; color:var(--text-dim); line-height:1.6; }
+
+  /* NAV */
+  .topnav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:14px 40px; background:rgba(8,8,16,.9); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); gap:12px; flex-wrap:wrap; }
+  .nav-logo { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:.08em; color:var(--gold); }
+  .nav-role { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--text-dim); background:var(--surface2); padding:6px 14px; border-radius:20px; border:1px solid var(--border); }
+  .nav-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .btn-back { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.1em; color:var(--text-dim); background:none; border:1px solid var(--border); padding:8px 16px; border-radius:8px; cursor:pointer; transition:all .2s; }
+  .btn-back:hover { color:var(--white); border-color:var(--white); }
+
+  /* WALLET PILL */
+  .wallet-pill { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:24px; padding:7px 14px; font-family:'Space Mono',monospace; font-size:11px; cursor:pointer; transition:all .2s; }
+  .wallet-pill:hover { border-color:var(--gold); }
+  .wallet-dot { width:8px; height:8px; border-radius:50%; background:var(--text-dim); flex-shrink:0; }
+  .wallet-dot.connected { background:var(--teal); box-shadow:0 0 8px var(--teal); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 8px var(--teal)} 50%{box-shadow:0 0 16px var(--teal)} }
+  .wallet-text { color:var(--text-dim); }
+  .wallet-text.connected { color:var(--white); }
+
+  /* NETWORK BADGE */
+  .net-badge { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; padding:5px 11px; border-radius:20px; border:1px solid; white-space:nowrap; }
+  .net-badge.sepolia { border-color:var(--teal); color:var(--teal); background:rgba(46,207,179,.08); }
+  .net-badge.wrong { border-color:var(--red); color:var(--red); background:rgba(224,62,62,.08); }
+
+  /* ORGANIZER */
+  .org-layout { display:grid; grid-template-columns:360px 1fr; min-height:calc(100vh - 65px); }
+  .org-sidebar { border-right:1px solid var(--border); padding:28px 24px; background:var(--surface); position:sticky; top:65px; height:calc(100vh - 65px); overflow-y:auto; }
+  .org-sidebar h2 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:.05em; color:var(--gold); margin-bottom:20px; }
+  .org-main { padding:32px; }
+
+  .form-group { margin-bottom:13px; }
+  .form-label { display:block; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .form-input, .form-select, .form-textarea { width:100%; background:var(--black); border:1px solid var(--border); border-radius:8px; padding:9px 13px; color:var(--white); font-family:'DM Sans',sans-serif; font-size:14px; outline:none; transition:border-color .2s; }
+  .form-input:focus,.form-select:focus,.form-textarea:focus { border-color:var(--gold); }
+  .form-textarea { resize:vertical; min-height:70px; }
+  .form-select option { background:var(--black); }
+
+  .btn-primary { width:100%; padding:13px; background:var(--gold); color:var(--black); border:none; border-radius:8px; font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:.08em; cursor:pointer; transition:all .2s; margin-top:6px; }
+  .btn-primary:hover:not(:disabled) { background:var(--gold-light); transform:translateY(-2px); box-shadow:0 8px 24px rgba(212,168,67,.3); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+
+  .section-header { display:flex; align-items:baseline; gap:14px; margin-bottom:22px; }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:.05em; }
+  .section-count { font-family:'Space Mono',monospace; font-size:12px; color:var(--text-dim); }
+  .events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
+
+  .event-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface); transition:all .3s; }
+  .event-card:hover { border-color:rgba(212,168,67,.4); transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,.4); }
+  .event-img { width:100%; height:145px; object-fit:cover; display:block; }
+  .event-img-ph { width:100%; height:145px; display:flex; align-items:center; justify-content:center; font-size:44px; background:linear-gradient(135deg,var(--surface2),var(--surface)); }
+  .event-body { padding:14px 16px; }
+  .event-category { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+  .event-name { font-family:'Bebas Neue',sans-serif; font-size:19px; letter-spacing:.03em; margin-bottom:5px; line-height:1.1; }
+  .event-meta { font-size:12px; color:var(--text-dim); margin-bottom:10px; line-height:1.6; }
+  .ticket-bar { background:var(--black); border-radius:6px; height:5px; overflow:hidden; margin-bottom:5px; }
+  .ticket-fill { height:100%; background:linear-gradient(90deg,var(--teal),var(--gold)); border-radius:6px; transition:width .5s; }
+  .ticket-info { display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); }
+  .ticket-info span:last-child { color:var(--teal); }
+
+  /* USER */
+  .user-hero { padding:50px 40px 32px; text-align:center; border-bottom:1px solid var(--border); background:linear-gradient(180deg,rgba(212,168,67,.04) 0%,transparent 100%); }
+  .user-hero h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(30px,6vw,54px); letter-spacing:.06em; margin-bottom:8px; }
+  .user-hero p { font-size:13px; color:var(--text-dim); }
+  .filter-bar { display:flex; gap:10px; padding:20px 40px; overflow-x:auto; border-bottom:1px solid var(--border); }
+  .filter-btn { font-family:'Space Mono',monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; padding:8px 18px; border-radius:20px; border:1px solid var(--border); background:none; color:var(--text-dim); cursor:pointer; white-space:nowrap; transition:all .2s; }
+  .filter-btn.active,.filter-btn:hover { border-color:var(--gold); color:var(--gold); background:rgba(212,168,67,.08); }
+  .user-events-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:26px; padding:36px 40px; }
+  .user-event-card { border:1px solid var(--border); border-radius:16px; overflow:hidden; background:var(--surface); transition:all .3s; position:relative; }
+  .user-event-card:hover { border-color:rgba(212,168,67,.5); transform:translateY(-4px); box-shadow:0 20px 50px rgba(0,0,0,.5); }
+  .user-event-img { width:100%; height:185px; object-fit:cover; display:block; }
+  .user-event-img-ph { width:100%; height:185px; display:flex; align-items:center; justify-content:center; font-size:58px; background:linear-gradient(135deg,var(--surface2),#1e1e35); }
+  .user-event-body { padding:18px 20px; }
+  .price-tag { position:absolute; top:14px; left:14px; background:rgba(8,8,16,.85); backdrop-filter:blur(8px); border:1px solid var(--gold); border-radius:8px; padding:5px 12px; font-family:'Space Mono',monospace; font-size:12px; color:var(--gold); font-weight:700; }
+  .btn-book { width:100%; padding:11px; background:transparent; border:1px solid var(--gold); border-radius:8px; color:var(--gold); font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:.08em; cursor:pointer; transition:all .2s; margin-top:12px; }
+  .btn-book:hover:not(:disabled) { background:var(--gold); color:var(--black); box-shadow:0 6px 20px rgba(212,168,67,.3); }
+  .btn-book:disabled { opacity:.4; cursor:not-allowed; border-color:var(--border); color:var(--text-dim); }
+
+  /* MY TICKETS */
+  .my-tickets-section { padding:0 40px 60px; border-top:1px solid var(--border); margin-top:10px; }
+  .my-tickets-section .section-header { padding-top:36px; }
+  .tickets-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px; }
+
+  /* TICKET CARD */
+  .ticket-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--surface); }
+  .ticket-stub { background:linear-gradient(135deg,#1a1a2e,#0d0d1a); padding:18px; border-bottom:2px dashed rgba(212,168,67,.3); position:relative; }
+  .ticket-stub::before,.ticket-stub::after { content:''; position:absolute; width:20px; height:20px; background:var(--black); border-radius:50%; bottom:-11px; }
+  .ticket-stub::before { left:-10px; }
+  .ticket-stub::after { right:-10px; }
+  .ticket-event-name { font-family:'Bebas Neue',sans-serif; font-size:21px; letter-spacing:.04em; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ticket-event-meta { font-size:11px; color:var(--text-dim); }
+  .ticket-bottom { padding:16px; display:flex; align-items:center; gap:14px; }
+  .ticket-qr { width:88px; height:88px; border-radius:6px; overflow:hidden; background:#fff; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .ticket-details { flex:1; min-width:0; }
+  .ticket-id { font-family:'Space Mono',monospace; font-size:15px; font-weight:700; color:var(--gold); margin-bottom:5px; }
+  .ticket-detail-row { font-size:10px; color:var(--text-dim); margin-bottom:2px; font-family:'Space Mono',monospace; }
+  .badge-status { display:inline-block; padding:3px 10px; border-radius:20px; font-family:'Space Mono',monospace; font-size:9px; letter-spacing:.15em; text-transform:uppercase; }
+  .badge-status.used { background:rgba(224,62,62,.15); color:var(--red); border:1px solid var(--red); }
+  .badge-status.valid { background:rgba(46,207,179,.15); color:var(--teal); border:1px solid var(--teal); }
+
+  /* TX SPINNER */
+  .tx-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(212,168,67,.3); border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* CHAIN INFO */
+  .chain-info { background:var(--black); border:1px solid var(--border); border-radius:10px; padding:14px 16px; font-family:'Space Mono',monospace; font-size:10px; color:var(--text-dim); line-height:1.9; }
+  .chain-info .hl { color:var(--gold); }
+  .chain-info .addr { color:var(--teal); word-break:break-all; }
+  .tx-link { font-family:'Space Mono',monospace; font-size:9px; color:var(--teal); text-decoration:none; word-break:break-all; }
+  .tx-link:hover { text-decoration:underline; }
+  .icon-btn { font-family:'Space Mono',monospace; font-size:9px; background:none; border:1px solid var(--border); color:var(--text-dim); border-radius:4px; padding:3px 8px; cursor:pointer; transition:all .2s; }
+  .icon-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); backdrop-filter:blur(10px); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:20px; width:100%; max-width:500px; padding:32px; position:relative; animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both; max-height:90vh; overflow-y:auto; }
+  .modal-close { position:absolute; top:14px; right:14px; background:none; border:none; color:var(--text-dim); font-size:24px; cursor:pointer; transition:color .2s; }
+  .modal-close:hover { color:var(--white); }
+
+  /* TOAST */
+  .toast-container { position:fixed; bottom:24px; right:24px; z-index:9000; display:flex; flex-direction:column; gap:8px; }
+  .toast { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 16px; font-size:13px; min-width:260px; max-width:340px; animation:slideInToast .3s ease both; display:flex; align-items:flex-start; gap:10px; box-shadow:0 8px 30px rgba(0,0,0,.4); }
+  .toast.success { border-left:3px solid var(--teal); }
+  .toast.error { border-left:3px solid var(--red); }
+  .toast.info { border-left:3px solid var(--gold); }
+  .toast-icon { flex-shrink:0; }
+  .toast-title { font-weight:600; margin-bottom:2px; }
+  .toast-sub { font-size:11px; color:var(--text-dim); font-family:'Space Mono',monospace; word-break:break-all; }
+
+  /* EMPTY */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text-dim); grid-column:1/-1; }
+  .empty-state .es-icon { font-size:44px; display:block; margin-bottom:14px; }
+  .empty-state p { font-size:13px; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes popIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+  @keyframes slideInToast { from{opacity:0;transform:translateX(40px)} to{opacity:1;transform:translateX(0)} }
+
+  ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--black)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+  @media(max-width:768px){
+    .org-layout{grid-template-columns:1fr}
+    .org-sidebar{position:static;height:auto}
+    .topnav,.user-events-grid,.my-tickets-section{padding-left:16px;padding-right:16px}
+    .filter-bar{padding:14px 16px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="loginPage" class="page active">
+  <div style="text-align:center;position:relative;z-index:10">
+    <div class="login-logo">ChainPass</div>
+    <div class="login-tagline">Sepolia Blockchain · Event Ticketing</div>
+    <div class="login-cards">
+      <div class="login-card" onclick="loginAs('organizer')">
+        <span class="login-card-icon">🎪</span>
+        <h2>Event Organizer</h2>
+        <p>Create events, set ticket limits, and monitor on-chain sales with MetaMask.</p>
+      </div>
+      <div class="login-card" onclick="loginAs('user')">
+        <span class="login-card-icon">🎟</span>
+        <h2>Event Goer</h2>
+        <p>Browse events, buy tickets via MetaMask, and receive a blockchain-verified QR ticket.</p>
+      </div>
+    </div>
+    <p style="margin-top:28px;font-family:Space Mono,monospace;font-size:10px;color:var(--text-dim)">
+      Contract &nbsp;<span style="color:var(--teal)">0x8d059EEb57E0Eeb9098c8f503CA708593Aa80B1E</span>&nbsp; · Sepolia
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════ ORGANIZER ══════════════ -->
+<div id="organizerPage" class="page">
+  <nav class="topnav">
+    <div class="nav-logo">ChainPass</div>
+    <div class="nav-role">Organizer</div>
+    <div class="nav-right">
+      <span id="orgNetBadge" class="net-badge" style="display:none"></span>
+      <div class="wallet-pill" onclick="connectWallet('org')" id="orgWalletPill">
+        <div class="wallet-dot" id="orgWalletDot"></div>
+        <span class="wallet-text" id="orgWalletText">Connect Wallet</span>
+      </div>
+      <button class="btn-back" onclick="goBack()">← Exit</button>
+    </div>
+  </nav>
+
+  <div class="org-layout">
+    <aside class="org-sidebar">
+      <h2>+ New Event</h2>
+      <div class="form-group"><label class="form-label">Event Name *</label><input class="form-input" id="evtName" placeholder="e.g. Neon Rave Night"/></div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-select" id="evtCategory">
+          <option value="Music">🎵 Music</option><option value="Sports">⚽ Sports</option>
+          <option value="Tech">💻 Tech</option><option value="Art">🎨 Art</option>
+          <option value="Food">🍜 Food</option><option value="Film">🎬 Film</option>
+          <option value="Comedy">😂 Comedy</option><option value="Other">✨ Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="evtDate" type="date"/></div>
+      <div class="form-group"><label class="form-label">Time</label><input class="form-input" id="evtTime" type="time"/></div>
+      <div class="form-group"><label class="form-label">Venue *</label><input class="form-input" id="evtVenue" placeholder="e.g. Madison Square Garden"/></div>
+      <div class="form-group"><label class="form-label">Ticket Price (ETH)</label><input class="form-input" id="evtPrice" type="number" step="0.001" min="0" placeholder="0.05"/></div>
+      <div class="form-group"><label class="form-label">Total Tickets</label><input class="form-input" id="evtTickets" type="number" min="1" placeholder="500"/></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="evtDesc" placeholder="What makes this event special?"></textarea></div>
+      <div class="form-group"><label class="form-label">Image URL</label><input class="form-input" id="evtImage" type="url" placeholder="https://..."/></div>
+      <button class="btn-primary" onclick="addEvent()">Publish Event</button>
+
+      <div style="margin-top:20px">
+        <div class="chain-info">
+          <div>Contract</div><div class="addr">0x8d059EEb57E0Eeb9098c8f503CA708593Aa80B1E</div>
+          <div style="margin-top:6px">Network: <span class="hl">Sepolia Testnet</span></div>
+          <div>Tickets on-chain: <span class="hl" id="orgChainCount">—</span></div>
+        </div>
+        <button class="btn-primary" style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:DM Sans,sans-serif;font-size:13px;letter-spacing:0;margin-top:8px" onclick="refreshOrgChain()">↻ Refresh Chain Data</button>
+      </div>
+    </aside>
+
+    <main class="org-main">
+      <div class="section-header">
+        <div class="section-title">Your Events</div>
+        <div class="section-count" id="orgEventCount">0 events</div>
+      </div>
+      <div class="events-grid" id="orgEventsGrid">
+        <div class="empty-state"><span class="es-icon">📭</span><p>No events yet.</p></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══════════════ USER ══════════════ -->
+<div id="userPage" class="page">
+  <nav class="topnav">
+    <div class="nav-logo">ChainPass</div>
+    <div class="nav-role">Event Goer</div>
+    <div class="nav-right">
+      <span id="userNetBadge" class="net-badge" style="display:none"></span>
+      <div class="wallet-pill" onclick="connectWallet('user')" id="userWalletPill">
+        <div class="wallet-dot" id="userWalletDot"></div>
+        <span class="wallet-text" id="userWalletText">Connect Wallet</span>
+      </div>
+      <button class="btn-back" onclick="goBack()">← Exit</button>
+    </div>
+  </nav>
+
+  <div class="user-hero">
+    <h1>Find Your Next Experience</h1>
+    <p>Tickets minted on Sepolia blockchain · Confirmed by MetaMask · Verified by QR</p>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('All',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('Music',this)">🎵 Music</button>
+    <button class="filter-btn" onclick="setFilter('Sports',this)">⚽ Sports</button>
+    <button class="filter-btn" onclick="setFilter('Tech',this)">💻 Tech</button>
+    <button class="filter-btn" onclick="setFilter('Art',this)">🎨 Art</button>
+    <button class="filter-btn" onclick="setFilter('Food',this)">🍜 Food</button>
+    <button class="filter-btn" onclick="setFilter('Film',this)">🎬 Film</button>
+    <button class="filter-btn" onclick="setFilter('Comedy',this)">😂 Comedy</button>
+  </div>
+
+  <div class="user-events-grid" id="userEventsGrid">
+    <div class="empty-state"><span class="es-icon">🎪</span><p>No events yet!</p></div>
+  </div>
+
+  <div class="my-tickets-section">
+    <div class="section-header">
+      <div class="section-title">My Blockchain Tickets</div>
+      <div class="section-count" id="myTicketCount">—</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <button class="btn-back" onclick="loadMyOnChainTickets()" style="font-size:12px;padding:9px 16px">↻ Sync from Blockchain</button>
+    </div>
+    <div class="tickets-list" id="myTicketsList">
+      <div class="empty-state"><span class="es-icon">🎫</span><p>Connect wallet and sync to load your on-chain tickets.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ══════════════ -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  BLOCKCHAIN CONFIG  (from original code)
+// ══════════════════════════════════════════
+const CONTRACT_ADDRESS = "0x8d059EEb57E0Eeb9098c8f503CA708593Aa80B1E";
+const SEPOLIA_CHAIN_ID = 11155111;
+const SEPOLIA_HEX      = "0xaa36a7";
+
+const ABI = [
+  "function buyTicket() public",
+  "function ticketCount() public view returns (uint)",
+  "function tickets(uint) public view returns (address owner, bool used)",
+  "function markUsed(uint)"
+];
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let provider, signer, contract, userAddress;
+let walletConnected = false;
+let currentRole     = null;
+let currentFilter   = 'All';
+let myOnChainTickets = [];
+
+// Local event store (organizer-defined; tickets go to chain)
+const events = [
+  {
+    id:'demo-1', name:'Neon Rave Night', category:'Music',
+    date:'2026-04-15', time:'22:00', venue:'Warehouse 23, Berlin', price:'0.01',
+    totalTickets:300, desc:'Immersive techno experience with world-class DJs and laser installations.',
+    image:'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80'
+  },
+  {
+    id:'demo-2', name:'Web3 Summit 2026', category:'Tech',
+    date:'2026-05-02', time:'09:00', venue:'Convention Center, SF', price:'0.05',
+    totalTickets:1000, desc:'Premier blockchain conference — speakers from 40+ countries.',
+    image:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'
+  }
+];
+
+const EMOJIS = { Music:'🎵', Sports:'⚽', Tech:'💻', Art:'🎨', Food:'🍜', Film:'🎬', Comedy:'😂', Other:'✨' };
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function loginAs(role) {
+  currentRole = role;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(role === 'organizer' ? 'organizerPage' : 'userPage').classList.add('active');
+  role === 'organizer' ? renderOrgEvents() : renderUserEvents();
+  window.scrollTo(0,0);
+}
+function goBack() {
+  currentRole = null;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('loginPage').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════
+//  WALLET
+// ══════════════════════════════════════════
+async function connectWallet(ctx) {
+  if (!window.ethereum) {
+    toast('MetaMask Not Found', 'Install the MetaMask browser extension.', 'error'); return;
+  }
+  try {
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    let net = await provider.getNetwork();
+
+    if (net.chainId !== SEPOLIA_CHAIN_ID) {
+      setNetBadge(ctx, false);
+      toast('Wrong Network', 'Switching to Sepolia…', 'error');
+      try {
+        await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:SEPOLIA_HEX}] });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        net = await provider.getNetwork();
+      } catch(e) {
+        toast('Switch Failed', 'Please switch to Sepolia manually in MetaMask.', 'error'); return;
+      }
+    }
+
+    signer         = provider.getSigner();
+    userAddress    = await signer.getAddress();
+    contract       = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    walletConnected = true;
+
+    setWalletUI(ctx, userAddress);
+    setNetBadge(ctx, true);
+    toast('Wallet Connected', shortAddr(userAddress), 'success');
+
+    if (ctx === 'user') await loadMyOnChainTickets();
+    if (ctx === 'org')  await refreshOrgChain();
+
+  } catch(e) {
+    console.error(e);
+    const msg = e.code === 4001 ? 'Request rejected in MetaMask.' : (e.message?.slice(0,70)||'Unknown error');
+    toast('Connection Failed', msg, 'error');
+  }
+}
+
+function setWalletUI(ctx, addr) {
+  const p = ctx === 'org' ? 'org' : 'user';
+  document.getElementById(p+'WalletDot').classList.add('connected');
+  const t = document.getElementById(p+'WalletText');
+  t.textContent = shortAddr(addr); t.classList.add('connected');
+}
+
+function setNetBadge(ctx, ok) {
+  const p = ctx === 'org' ? 'org' : 'user';
+  const b = document.getElementById(p+'NetBadge');
+  b.style.display = 'block';
+  b.className = 'net-badge ' + (ok ? 'sepolia' : 'wrong');
+  b.textContent = ok ? '● Sepolia' : '✕ Wrong Network';
+}
+
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', ()=>location.reload());
+  window.ethereum.on('chainChanged',    ()=>location.reload());
+}
+
+// ══════════════════════════════════════════
+//  ORGANIZER
+// ══════════════════════════════════════════
+function addEvent() {
+  const name  = document.getElementById('evtName').value.trim();
+  const date  = document.getElementById('evtDate').value;
+  const venue = document.getElementById('evtVenue').value.trim();
+  if (!name || !date || !venue) { toast('Missing Fields','Fill in name, date, and venue.','error'); return; }
+
+  events.push({
+    id:'evt-'+Date.now(),
+    name, category: document.getElementById('evtCategory').value,
+    date, time: document.getElementById('evtTime').value,
+    venue, price: document.getElementById('evtPrice').value || '0',
+    totalTickets: parseInt(document.getElementById('evtTickets').value)||null,
+    desc: document.getElementById('evtDesc').value.trim(),
+    image: document.getElementById('evtImage').value.trim()
+  });
+
+  renderOrgEvents(); renderUserEvents();
+  toast('Event Published', `"${name}" is now live.`, 'success');
+  ['evtName','evtDate','evtTime','evtVenue','evtPrice','evtTickets','evtDesc','evtImage'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function refreshOrgChain() {
+  if (!contract) { toast('No Wallet','Connect MetaMask first.','error'); return; }
+  try {
+    const c = (await contract.ticketCount()).toNumber();
+    document.getElementById('orgChainCount').textContent = c;
+    renderOrgEvents(c);
+    toast('Chain Synced', `${c} ticket(s) sold on-chain.`, 'success');
+  } catch(e) { toast('Chain Error', e.message?.slice(0,60), 'error'); }
+}
+
+function renderOrgEvents(chainCount) {
+  const grid = document.getElementById('orgEventsGrid');
+  document.getElementById('orgEventCount').textContent = events.length + (events.length!==1?' events':' event');
+  if (!events.length) { grid.innerHTML=`<div class="empty-state"><span class="es-icon">📭</span><p>No events yet.</p></div>`; return; }
+  grid.innerHTML = events.map(evt => {
+    const img = evt.image
+      ? `<img class="event-img" src="${evt.image}" alt="${evt.name}" onerror="this.outerHTML='<div class=\\'event-img-ph\\'>${EMOJIS[evt.category]||'✨'}</div>'">`
+      : `<div class="event-img-ph">${EMOJIS[evt.category]||'✨'}</div>`;
+    const sold = chainCount !== undefined ? chainCount : '—';
+    const total = evt.totalTickets || '∞';
+    const pct = (evt.totalTickets && chainCount) ? Math.min(100,Math.round(chainCount/evt.totalTickets*100)) : 0;
+    return `<div class="event-card">${img}
+      <div class="event-body">
+        <div class="event-category">${evt.category}</div>
+        <div class="event-name">${evt.name}</div>
+        <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''}<br>📍 ${evt.venue}<br>◆ ${evt.price} ETH</div>
+        <div class="ticket-bar"><div class="ticket-fill" style="width:${pct}%"></div></div>
+        <div class="ticket-info"><span>On-chain: ${sold}</span><span>Total: ${total}</span></div>
+      </div></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  USER — EVENTS
+// ══════════════════════════════════════════
+function setFilter(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderUserEvents();
+}
+
+function renderUserEvents() {
+  const grid = document.getElementById('userEventsGrid');
+  const filtered = currentFilter==='All' ? events : events.filter(e=>e.category===currentFilter);
+  if (!filtered.length) { grid.innerHTML=`<div class="empty-state"><span class="es-icon">🔍</span><p>No events in this category.</p></div>`; return; }
+  grid.innerHTML = filtered.map(evt => {
+    const owned = myOnChainTickets.some(t=>t.eventId===evt.id);
+    const img = evt.image
+      ? `<img class="user-event-img" src="${evt.image}" alt="${evt.name}" onerror="this.outerHTML='<div class=\\'user-event-img-ph\\'>${EMOJIS[evt.category]||'✨'}</div>'">`
+      : `<div class="user-event-img-ph">${EMOJIS[evt.category]||'✨'}</div>`;
+    return `<div class="user-event-card">
+      <div class="price-tag">◆ ${evt.price} ETH</div>
+      ${img}
+      <div class="user-event-body">
+        <div class="event-category">${evt.category}</div>
+        <div style="font-family:Bebas Neue,sans-serif;font-size:24px;letter-spacing:.03em;margin-bottom:5px">${evt.name}</div>
+        <div class="event-meta">📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''} &nbsp;·&nbsp; 📍 ${evt.venue}</div>
+        <div style="font-size:13px;color:var(--text-dim);margin:8px 0 10px;line-height:1.6">${evt.desc||''}</div>
+        <button class="btn-book" ${owned?'disabled':''} onclick="openBooking('${evt.id}')">
+          ${owned ? '✓ Ticket Owned' : '🔗 Buy via MetaMask'}
+        </button>
+      </div></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  BOOKING — REAL BLOCKCHAIN TX
+// ══════════════════════════════════════════
+function openBooking(eventId) {
+  const evt = events.find(e=>e.id===eventId);
+  if (!evt) return;
+  const img = evt.image ? `<img src="${evt.image}" style="width:100%;height:145px;object-fit:cover;border-radius:8px;margin-bottom:16px" onerror="this.style.display='none'">` : '';
+  document.getElementById('modalContent').innerHTML = `
+    ${img}
+    <div style="font-family:Space Mono,monospace;font-size:9px;letter-spacing:.3em;color:var(--gold);margin-bottom:4px">${evt.category}</div>
+    <div style="font-family:Bebas Neue,sans-serif;font-size:28px;margin-bottom:10px">${evt.name}</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:18px;line-height:1.7">
+      📅 ${fmtDate(evt.date)} ${evt.time?'· '+evt.time:''}<br>📍 ${evt.venue}
+    </div>
+    <div class="chain-info" style="margin-bottom:16px">
+      <div>Contract &nbsp;<span class="addr">${CONTRACT_ADDRESS}</span></div>
+      <div>Network: <span class="hl">Sepolia Testnet</span> &nbsp;·&nbsp; Function: <span class="hl">buyTicket()</span></div>
+    </div>
+    <div style="background:var(--black);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--text-dim)">MetaMask will ask you to sign</span>
+      <span style="font-family:Bebas Neue,sans-serif;font-size:22px;color:var(--gold)">◆ ${evt.price} ETH</span>
+    </div>
+    ${!walletConnected
+      ? `<button class="btn-primary" onclick="connectWallet('user')">Connect Wallet First</button>`
+      : `<button class="btn-primary" id="confirmBtn" onclick="confirmBooking('${evt.id}')">Sign & Buy on Blockchain</button>`}
+  `;
+  document.getElementById('bookingModal').classList.add('open');
+}
+
+async function confirmBooking(eventId) {
+  if (!contract) { toast('No Wallet','Connect MetaMask first.','error'); return; }
+  const evt = events.find(e=>e.id===eventId);
+  if (!evt) return;
+
+  const btn = document.getElementById('confirmBtn');
+  if (btn) { btn.disabled=true; btn.innerHTML=`<span class="tx-spinner"></span>Waiting for MetaMask…`; }
+
+  try {
+    // ─── REAL SEPOLIA TRANSACTION ───
+    toast('MetaMask Opening','Please confirm the transaction.','info');
+    const tx = await contract.buyTicket();
+
+    if (btn) btn.innerHTML = `<span class="tx-spinner"></span>Mining block…`;
+    toast('TX Submitted', tx.hash.slice(0,22)+'…', 'info');
+
+    const receipt = await tx.wait(); // confirmed on-chain
+
+    // Read back the new ticket from contract
+    const count    = await contract.ticketCount();
+    const ticketId = count.toNumber();
+    const onChain  = await contract.tickets(ticketId);
+
+    const ticketObj = {
+      ticketId, eventId: evt.id, eventName: evt.name,
+      category: evt.category, date: evt.date, time: evt.time,
+      venue: evt.venue, price: evt.price,
+      used: onChain.used, owner: onChain.owner,
+      txHash: tx.hash, blockNumber: receipt.blockNumber,
+      qrData: JSON.stringify({
+        ticketId, event: evt.name, owner: onChain.owner,
+        contract: CONTRACT_ADDRESS, network:'Sepolia', txHash: tx.hash
+      })
+    };
+
+    myOnChainTickets.push(ticketObj);
+    renderUserEvents(); renderMyTickets();
+    closeModal();
+    setTimeout(() => showTicketModal(ticketObj), 200);
+    toast('Ticket Minted! 🎉', `On-chain #${ticketId} · Block ${receipt.blockNumber}`, 'success');
+
+  } catch(e) {
+    console.error(e);
+    const msg = e.code===4001 ? 'Rejected in MetaMask.' : (e.reason||e.message?.slice(0,80)||'Transaction failed.');
+    toast('Transaction Failed', msg, 'error');
+    if (btn) { btn.disabled=false; btn.innerHTML='Sign & Buy on Blockchain'; }
+  }
+}
+
+// ══════════════════════════════════════════
+//  SYNC MY TICKETS FROM CHAIN
+// ══════════════════════════════════════════
+async function loadMyOnChainTickets() {
+  if (!contract || !userAddress) { toast('No Wallet','Connect MetaMask first.','error'); return; }
+  const listEl = document.getElementById('myTicketsList');
+  listEl.innerHTML = `<div class="empty-state"><span class="tx-spinner" style="width:28px;height:28px;border-width:3px"></span><p style="margin-top:14px">Scanning Sepolia blockchain…</p></div>`;
+  try {
+    const total = (await contract.ticketCount()).toNumber();
+    myOnChainTickets = [];
+    for (let i = 1; i <= total; i++) {
+      const t = await contract.tickets(i);
+      if (t.owner.toLowerCase() === userAddress.toLowerCase()) {
+        const matchEvt = events[myOnChainTickets.length] || null;
+        myOnChainTickets.push({
+          ticketId: i, eventId: matchEvt?.id||null,
+          eventName: matchEvt?.name || `Event Ticket #${i}`,
+          category: matchEvt?.category||'Other', date: matchEvt?.date||'',
+          time: matchEvt?.time||'', venue: matchEvt?.venue||'See contract',
+          price: matchEvt?.price||'—', used: t.used, owner: t.owner,
+          txHash: '', blockNumber: null,
+          qrData: JSON.stringify({ ticketId:i, owner:t.owner, contract:CONTRACT_ADDRESS, network:'Sepolia', used:t.used })
+        });
+      }
+    }
+    renderMyTickets(); renderUserEvents();
+    const c = myOnChainTickets.length;
+    toast(c ? 'Synced!' : 'No Tickets', c ? `Found ${c} ticket(s) on-chain.` : "You don't own any tickets yet.", c?'success':'info');
+  } catch(e) {
+    console.error(e);
+    toast('Sync Failed', e.message?.slice(0,60), 'error');
+    listEl.innerHTML = `<div class="empty-state"><span class="es-icon">⚠️</span><p>Could not read from chain.</p></div>`;
+  }
+}
+
+// ══════════════════════════════════════════
+//  MARK USED (on-chain)
+// ══════════════════════════════════════════
+async function markTicketUsed(ticketId) {
+  if (!contract) { toast('No Wallet','Connect first.','error'); return; }
+  try {
+    toast('MetaMask Opening','Confirm markUsed transaction.','info');
+    const tx = await contract.markUsed(ticketId);
+    await tx.wait();
+    toast('Marked Used!', `Ticket #${ticketId} updated on-chain.`, 'success');
+    await loadMyOnChainTickets();
+  } catch(e) {
+    toast('Failed', e.reason||e.message?.slice(0,60), 'error');
+  }
+}
+
+// ══════════════════════════════════════════
+//  RENDER MY TICKETS
+// ══════════════════════════════════════════
+function renderMyTickets() {
+  const list = document.getElementById('myTicketsList');
+  const c = myOnChainTickets.length;
+  document.getElementById('myTicketCount').textContent = c + ' ticket' + (c!==1?'s':'');
+  if (!c) { list.innerHTML=`<div class="empty-state"><span class="es-icon">🎫</span><p>No tickets found. Connect wallet and sync.</p></div>`; return; }
+  list.innerHTML = myOnChainTickets.map(t=>buildTicketHTML(t)).join('');
+  setTimeout(() => {
+    myOnChainTickets.forEach(t => {
+      const canvas = document.getElementById('qr-'+t.ticketId);
+      if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+    });
+  }, 80);
+}
+
+function buildTicketHTML(t) {
+  const etherscanTx = t.txHash ? `https://sepolia.etherscan.io/tx/${t.txHash}` : `https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS}`;
+  return `
+  <div class="ticket-card">
+    <div class="ticket-stub">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:Space Mono,monospace;font-size:9px;letter-spacing:.3em;color:var(--gold);margin-bottom:4px">${t.category.toUpperCase()} · SEPOLIA</div>
+          <div class="ticket-event-name">${t.eventName}</div>
+          <div class="ticket-event-meta">${t.date?'📅 '+fmtDate(t.date):''} ${t.venue&&t.venue!=='See contract'?'· 📍 '+t.venue:''}</div>
+        </div>
+        <span class="badge-status ${t.used?'used':'valid'}">${t.used?'Used':'Valid'}</span>
+      </div>
+    </div>
+    <div class="ticket-bottom">
+      <div class="ticket-qr"><canvas id="qr-${t.ticketId}"></canvas></div>
+      <div class="ticket-details">
+        <div class="ticket-id">Ticket #${t.ticketId}</div>
+        <div class="ticket-detail-row">Owner: ${shortAddr(t.owner||userAddress||'')}</div>
+        <div class="ticket-detail-row">Contract: ${shortAddr(CONTRACT_ADDRESS)}</div>
+        ${t.blockNumber ? `<div class="ticket-detail-row">Block: ${t.blockNumber}</div>` : ''}
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          <a href="${etherscanTx}" target="_blank" class="icon-btn" style="color:var(--teal);border-color:rgba(46,207,179,.3);text-decoration:none">Etherscan ↗</a>
+          ${!t.used?`<button onclick="markTicketUsed(${t.ticketId})" class="icon-btn">Mark Used</button>`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+//  TICKET CONFIRMATION MODAL
+// ══════════════════════════════════════════
+function showTicketModal(t) {
+  document.getElementById('modalContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-family:Bebas Neue,sans-serif;font-size:28px;color:var(--teal)">🎉 Ticket Minted on Sepolia!</div>
+      <div style="font-size:13px;color:var(--text-dim);margin-top:4px">Transaction confirmed on-chain</div>
+    </div>
+    ${buildTicketHTML(t)}
+    <div class="chain-info" style="margin-top:14px">
+      <div>TX Hash</div>
+      <div><a href="https://sepolia.etherscan.io/tx/${t.txHash}" target="_blank" class="tx-link">${t.txHash||'—'}</a></div>
+      ${t.blockNumber?`<div style="margin-top:4px">Block confirmed: <span class="hl">${t.blockNumber}</span></div>`:''}
+    </div>
+  `;
+  document.getElementById('bookingModal').classList.add('open');
+  setTimeout(() => {
+    const canvas = document.getElementById('qr-'+t.ticketId);
+    if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+  }, 80);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function closeModal() { document.getElementById('bookingModal').classList.remove('open'); }
+function shortAddr(a) { return (!a||a.length<10) ? a : a.slice(0,6)+'…'+a.slice(-4); }
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}                           
+function toast(title, sub, type='info') {
+  const colors={success:'var(--teal)',error:'var(--red)',info:'var(--gold)'};
+  const icons={success:'✓',error:'✕',info:'◆'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<div class="toast-icon" style="color:${colors[type]}">${icons[type]}</div><div class="toast-body"><div class="toast-title">${title}</div>${sub?`<div class="toast-sub">${sub}</div>`:''}</div>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>el.remove(), 5500);
+}
+document.getElementById('bookingModal').addEventListener('click', function(e){if(e.target===this)closeModal();});
+</script>
+</body>
+</html>
