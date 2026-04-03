@@ -30,85 +30,85 @@ let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
     id:'demo-1', name:'Neon Rave Night', category:'Music',
     date:'2026-04-15', time:'22:00', venue:'Warehouse 23, Berlin', price:'0.01',
     totalTickets:300, desc:'Immersive techno experience with world-class DJs and laser installations.',
-    image:'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1518977956810-a23f96a1c37b?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-2', name:'Web3 Summit 2026', category:'Tech',
     date:'2026-05-02', time:'09:00', venue:'Convention Center, SF', price:'0.05',
     totalTickets:1000, desc:'Premier blockchain conference — speakers from 40+ countries.',
-    image:'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-3', name:'Global Food Festival', category:'Food',
     date:'2026-06-10', time:'11:00', venue:'Central Park, NY', price:'0.02',
     totalTickets:5000, desc:'Taste delicacies from over 50 countries with live cooking shows by celebrity chefs.',
-    image:'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-4', name:'Abstract Art Exhibition', category:'Art',
     date:'2026-07-20', time:'18:00', venue:'The Louvre, Paris', price:'0.04',
     totalTickets:500, desc:'An exclusive evening viewing modern abstract masterpieces with complimentary champagne.',
-    image:'https://images.unsplash.com/photo-1518998053401-878c73ceb7b9?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-5', name:'Championship Finals 2026', category:'Sports',
     date:'2026-08-05', time:'20:00', venue:'Wembley Stadium, London', price:'0.15',
     totalTickets:80000, desc:'Witness the biggest football match of the decade live.',
-    image:'https://images.unsplash.com/photo-1508344928928-7137b29de216?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1496317899792-9d7dbcd928a1?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-6', name:'Laugh Out Loud Comedy Club', category:'Comedy',
     date:'2026-04-25', time:'21:30', venue:'The Comedy Cellar, NY', price:'0.015',
     totalTickets:150, desc:'A night of hilarious stand-up featuring surprise celebrity guests.',
-    image:'https://images.unsplash.com/photo-1527224857830-43a7aa8597c2?w=600&q=80'
+    image:'https://images.unsplash.com/photo-1455938238901-87ca138d0bb0?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-7', name:'Cinematic Masterpieces Festival', category:'Film',
     date:'2026-05-15', time:'19:00', venue:'Cannes Film Festival, France', price:'0.08',
     totalTickets:2000, desc:'Experience award-winning films from international directors on the big screen.',
-    image:'https://images.unsplash.com/photo-1517604931442-7fdbd4d9e13c?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-8', name:'Electronic Beats Festival', category:'Music',
     date:'2026-06-22', time:'20:00', venue:'Tomorrowland, Belgium', price:'0.12',
     totalTickets:150000, desc:'Three days of non-stop electronic music with world-famous DJs and immersive production.',
-    image:'https://images.unsplash.com/photo-1519985176271-adb1088fa94c?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1528222354211-064affdaf50d?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-9', name:'Ultimate Tennis Championship', category:'Sports',
     date:'2026-07-10', time:'14:00', venue:'Wimbledon, London', price:'0.25',
     totalTickets:15000, desc:'Watch the finest tennis players compete for glory at the prestigious Wimbledon tournament.',
-    image:'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-10', name:'Innovation & Gaming Expo', category:'Tech',
     date:'2026-06-05', time:'10:00', venue:'Las Vegas Convention Center, USA', price:'0.06',
     totalTickets:5000, desc:'Latest gaming hardware, VR experiences, and cutting-edge technology demonstrations.',
-    image:'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-11', name:'Yoga & Wellness Retreat', category:'Other',
     date:'2026-05-28', time:'08:00', venue:'Bali Resort & Spa, Indonesia', price:'0.18',
     totalTickets:500, desc:'Five-day meditation and yoga retreat with world-renowned instructors in paradise.',
-    image:'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-12', name:'Spring Jazz Festival', category:'Music',
     date:'2026-04-30', time:'18:00', venue:'Montreux Jazz Club, Switzerland', price:'0.045',
     totalTickets:3000, desc:'Legendary jazz performers and contemporary artists in the most scenic festival setting.',
-    image:'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1518976024611-48885a0f0b46?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-13', name:'Contemporary Art Gala', category:'Art',
     date:'2026-05-18', time:'19:30', venue:'Museum of Modern Art, New York', price:'0.12',
     totalTickets:800, desc:'Exclusive evening celebrating emerging and established contemporary artists with live performances.',
-    image:'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-14', name:'International Film Awards', category:'Film',
     date:'2026-07-01', time:'20:00', venue:'Dolby Theatre, Los Angeles', price:'0.35',
     totalTickets:3500, desc:'Celebrate cinema excellence at the most prestigious film awards ceremony of the year.',
-    image:'https://images.unsplash.com/photo-1497032205916-ac775f0649ae?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1489587021446-3fa7e27cd0df?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-15', name:'Basketball Super League Finals', category:'Sports',
@@ -132,19 +132,19 @@ let events = JSON.parse(localStorage.getItem('chainpass_events_v2')) || [
     id:'demo-18', name:'Startup Tech Summit 2026', category:'Tech',
     date:'2026-07-25', time:'09:00', venue:'Singapore Expo, Singapore', price:'0.055',
     totalTickets:4000, desc:'Network with founders, VCs, and innovators building the future of technology.',
-    image:'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-19', name:'Rock & Metal Extravaganza', category:'Music',
     date:'2026-06-30', time:'18:00', venue:'Sonisphere Festival Grounds, Greece', price:'0.065',
     totalTickets:25000, desc:'Three days of electrifying rock and metal performances from legendary and emerging bands.',
-    image:'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1497032205916-ac775f0649ae?auto=format&fit=crop&w=800&q=80'
   },
   {
     id:'demo-20', name:'Marathon Trophy Grand Prix', category:'Sports',
     date:'2026-08-20', time:'06:00', venue:'Circuit des 24 Heures, France', price:'0.28',
     totalTickets:30000, desc:'Witness the ultimate endurance test: 24-hour racing with world\'s top drivers.',
-    image:'https://images.unsplash.com/photo-1510557880182-3d4d3b4f5b08?auto=format&fit=crop&w=800&q=80'
+    image:'https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=800&q=80'
   }
 ];
 
