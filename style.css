@@ -143,7 +143,7 @@ body::before {
 .ticket-event-name { font-family:'Bebas Neue',sans-serif; font-size:21px; letter-spacing:.04em; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ticket-event-meta { font-size:11px; color:var(--text-dim); }
 .ticket-bottom { padding:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
-.ticket-qr { width:88px; height:88px; border-radius:6px; overflow:hidden; background:#fff; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.ticket-qr { width:120px; height:120px; border-radius:6px; overflow:hidden; background:#fff; flex-shrink:0; display:flex; align-items:center; justify-content:center; border: 2px solid var(--teal); }
 .ticket-details { flex:1; min-width:180px; }
 .ticket-id { font-family:'Space Mono',monospace; font-size:15px; font-weight:700; color:var(--gold); margin-bottom:5px; }
 .ticket-detail-row { font-size:10px; color:var(--text-dim); margin-bottom:2px; font-family:'Space Mono',monospace; }

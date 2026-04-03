@@ -468,7 +468,7 @@ function renderMyTickets() {
   setTimeout(() => {
     myOnChainTickets.forEach(t => {
       const canvas = document.getElementById('qr-list-'+t.ticketId);
-      if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+      if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:120, margin:1, color:{dark:'#000',light:'#fff'} });
     });
   }, 80);
   if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -490,7 +490,7 @@ function buildTicketHTML(t, ctx = 'list') {
       </div>
     </div>
     <div class="ticket-bottom">
-      <div class="ticket-qr"><canvas id="${qrId}"></canvas></div>
+      <div class="ticket-qr"><canvas id="${qrId}" width="120" height="120" style="width:100%;height:100%"></canvas></div>
       <div class="ticket-details">
         <div class="ticket-id">Ticket #${t.ticketId}</div>
         <div class="ticket-detail-row">Owner: ${shortAddr(t.owner||userAddress||'')}</div>
@@ -567,7 +567,7 @@ function showTicketModal(t) {
   document.getElementById('bookingModal').classList.add('open');
   setTimeout(() => {
     const canvas = document.getElementById('qr-modal-'+t.ticketId);
-    if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+    if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:120, margin:1, color:{dark:'#000',light:'#fff'} });
   }, 80);
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
