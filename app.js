@@ -549,18 +549,13 @@ function renderMyTickets() {
     return; 
   }
   list.innerHTML = myOnChainTickets.map(t=>buildTicketHTML(t, 'list')).join('');
-  setTimeout(() => {
-    myOnChainTickets.forEach(t => {
-      const canvas = document.getElementById('qr-list-'+t.ticketId);
-      if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:120, margin:1, color:{dark:'#000',light:'#fff'} });
-    });
-  }, 80);
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function buildTicketHTML(t, ctx = 'list') {
   const etherscanTx = t.txHash ? `https://sepolia.etherscan.io/tx/${t.txHash}` : `https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS}`;
-  const qrId = `qr-${ctx}-${t.ticketId}`;
+  const qrData = encodeURIComponent(t.qrData || JSON.stringify({ ticketId:t.ticketId, network:'Sepolia', used:t.used }));
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}`;
   return `
   <div class="ticket-card" style="background:#11111e">
     <div class="ticket-stub">
@@ -574,7 +569,7 @@ function buildTicketHTML(t, ctx = 'list') {
       </div>
     </div>
     <div class="ticket-bottom">
-      <div class="ticket-qr"><canvas id="${qrId}" width="120" height="120" style="width:100%;height:100%"></canvas></div>
+      <div class="ticket-qr"><img src="${qrUrl}" alt="Ticket QR Code" style="width:100%;height:100%;border-radius:6px;"></div>
       <div class="ticket-details">
         <div class="ticket-id">Ticket #${t.ticketId}</div>
         <div class="ticket-detail-row">Owner: ${shortAddr(t.owner||userAddress||'')}</div>
@@ -649,10 +644,6 @@ function showTicketModal(t) {
     </div>
   `;
   document.getElementById('bookingModal').classList.add('open');
-  setTimeout(() => {
-    const canvas = document.getElementById('qr-modal-'+t.ticketId);
-    if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:120, margin:1, color:{dark:'#000',light:'#fff'} });
-  }, 80);
   if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
