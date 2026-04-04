@@ -155,6 +155,36 @@ function saveEvents() {
   localStorage.setItem('chainpass_events_v2', JSON.stringify(events));
 }
 
+function getTicketScanHost() {
+  let host = localStorage.getItem('chainpass_scan_host');
+  const currentOrigin = window.location.origin || `${window.location.protocol}//${window.location.host}`;
+
+  if (!host) {
+    const unsafeHost = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost') || currentOrigin.startsWith('file://');
+    if (unsafeHost) {
+      const promptValue = prompt(
+        'Enter the network address to use for ticket QR links (for example http://192.168.1.42:5500):',
+        currentOrigin
+      );
+      if (promptValue) {
+        host = promptValue.trim();
+        localStorage.setItem('chainpass_scan_host', host);
+      }
+    }
+  }
+
+  if (!host) {
+    host = currentOrigin;
+  }
+
+  return host.replace(/\/$/, '');
+}
+
+function getTicketScanUrl(ticketId) {
+  const host = getTicketScanHost();
+  return `${host}/scan.php?ticket_id=${encodeURIComponent(ticketId)}`;
+}
+
 function savePurchases() {
   localStorage.setItem('chainpass_purchases', JSON.stringify(purchases));
 }
@@ -612,10 +642,7 @@ async function confirmBooking(eventId) {
       venue: evt.venue, price: evt.price,
       used: onChain.used, owner: onChain.owner,
       txHash: tx.hash, blockNumber: receipt.blockNumber,
-      qrData: JSON.stringify({
-        ticketId, event: evt.name, owner: onChain.owner,
-        contract: CONTRACT_ADDRESS, network:'Sepolia', txHash: tx.hash
-      })
+      qrData: getTicketScanUrl(ticketId)
     };
 
     purchases.push({
@@ -664,7 +691,7 @@ async function loadMyOnChainTickets() {
           time: matchEvt?.time||'', venue: matchEvt?.venue||'See contract',
           price: matchEvt?.price||'—', used: t.used, owner: t.owner,
           txHash: '', blockNumber: null,
-          qrData: JSON.stringify({ ticketId:i, owner:t.owner, contract:CONTRACT_ADDRESS, network:'Sepolia', used:t.used })
+          qrData: getTicketScanUrl(i)
         });
       }
     }
@@ -721,7 +748,8 @@ function renderMyTickets() {
 
 function buildTicketHTML(t, ctx = 'list') {
   const etherscanTx = t.txHash ? `https://sepolia.etherscan.io/tx/${t.txHash}` : `https://sepolia.etherscan.io/address/${CONTRACT_ADDRESS}`;
-  const qrData = encodeURIComponent(t.qrData || JSON.stringify({ ticketId:t.ticketId, network:'Sepolia', used:t.used }));
+  const scanUrl = getTicketScanUrl(t.ticketId);
+  const qrData = encodeURIComponent(scanUrl);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}`;
   return `
   <div class="ticket-card" style="background:#11111e">

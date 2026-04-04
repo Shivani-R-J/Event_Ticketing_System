@@ -30,7 +30,7 @@ if (file_exists($file)) {
 
 // QR data - customize this URL to your verification page
 $verification_url = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']);
-$data = $verification_url . "/verify.php?ticket_id=" . urlencode($ticket_id);
+$data = $verification_url . "/scan.php?ticket_id=" . urlencode($ticket_id);
 
 // Use QR Code library
 // Download from: https://sourceforge.net/projects/phpqrcode/

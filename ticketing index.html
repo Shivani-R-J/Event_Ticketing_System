@@ -619,10 +619,7 @@ async function confirmBooking(eventId) {
       venue: evt.venue, price: evt.price,
       used: onChain.used, owner: onChain.owner,
       txHash: tx.hash, blockNumber: receipt.blockNumber,
-      qrData: JSON.stringify({
-        ticketId, event: evt.name, owner: onChain.owner,
-        contract: CONTRACT_ADDRESS, network:'Sepolia', txHash: tx.hash
-      })
+      qrData: getTicketScanUrl(ticketId)
     };
 
     myOnChainTickets.push(ticketObj);
@@ -642,6 +639,33 @@ async function confirmBooking(eventId) {
 // ══════════════════════════════════════════
 //  SYNC MY TICKETS FROM CHAIN
 // ══════════════════════════════════════════
+function getTicketScanHost() {
+  let host = localStorage.getItem('chainpass_scan_host');
+  const currentOrigin = window.location.origin || `${window.location.protocol}//${window.location.host}`;
+  const unsafeHost = currentOrigin.includes('127.0.0.1') || currentOrigin.includes('localhost') || currentOrigin.startsWith('file://');
+
+  if (!host && unsafeHost) {
+    const promptValue = prompt(
+      'Enter the network address to use for ticket QR links (for example http://192.168.1.42:5500):',
+      currentOrigin
+    );
+    if (promptValue) {
+      host = promptValue.trim();
+      localStorage.setItem('chainpass_scan_host', host);
+    }
+  }
+
+  if (!host) {
+    host = currentOrigin;
+  }
+
+  return host.replace(/\/$/, '');
+}
+
+function getTicketScanUrl(ticketId) {
+  return `${getTicketScanHost()}/scan.php?ticket_id=${encodeURIComponent(ticketId)}`;
+}
+
 async function loadMyOnChainTickets() {
   if (!contract || !userAddress) { toast('No Wallet','Connect MetaMask first.','error'); return; }
   const listEl = document.getElementById('myTicketsList');
@@ -660,7 +684,7 @@ async function loadMyOnChainTickets() {
           time: matchEvt?.time||'', venue: matchEvt?.venue||'See contract',
           price: matchEvt?.price||'—', used: t.used, owner: t.owner,
           txHash: '', blockNumber: null,
-          qrData: JSON.stringify({ ticketId:i, owner:t.owner, contract:CONTRACT_ADDRESS, network:'Sepolia', used:t.used })
+          qrData: getTicketScanUrl(i)
         });
       }
     }
@@ -702,7 +726,8 @@ function renderMyTickets() {
   setTimeout(() => {
     myOnChainTickets.forEach(t => {
       const canvas = document.getElementById('qr-'+t.ticketId);
-      if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+      const qrData = typeof t.qrData === 'string' && t.qrData.trim().startsWith('{') ? getTicketScanUrl(t.ticketId) : t.qrData;
+      if (canvas) QRCode.toCanvas(canvas, qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
     });
   }, 80);
 }
@@ -756,7 +781,8 @@ function showTicketModal(t) {
   document.getElementById('bookingModal').classList.add('open');
   setTimeout(() => {
     const canvas = document.getElementById('qr-'+t.ticketId);
-    if (canvas) QRCode.toCanvas(canvas, t.qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
+    const qrData = typeof t.qrData === 'string' && t.qrData.trim().startsWith('{') ? getTicketScanUrl(t.ticketId) : t.qrData;
+    if (canvas) QRCode.toCanvas(canvas, qrData, { width:88, margin:1, color:{dark:'#000',light:'#fff'} });
   }, 80);
 }
 
